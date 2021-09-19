@@ -47,7 +47,9 @@ const toCoord = (key) => {
 
 app.post('/report', (req, res) => {
     const key = toKey(req.body.locLat, req.body.locLong);
+    // truncate to 3 or 4 decimals to make locations a bit more vague
     locations.set(key, req.body.rating);
+    res.send('thanks!');
 });
 
 app.post('/find', (req, res) => {
