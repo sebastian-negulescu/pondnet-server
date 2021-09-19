@@ -39,6 +39,15 @@ const toKey = (lat, long) => {
     return '(' + String(lat) + ',' + String(long) + ')';
 };
 
+const test = () => {
+    locations.set(toKey(43.48230083450684, -80.5436422284289), 5);
+    locations.set(toKey(43.45433170825115, -80.55248278881507), 2);
+    locations.set(toKey(43.47538762226163, -80.53051013387466), 4);
+    locations.set(toKey(43.4730207552452, -80.52724856790694), 1);
+};
+
+test();
+
 const toCoord = (key) => {
     const coordString = key.replace('(', '').replace(')', '').split(',');
     const coord = [parseFloat(coordString[0]), parseFloat(coordString[1])];
