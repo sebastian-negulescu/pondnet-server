@@ -1,6 +1,23 @@
 const express = require('express');
 const fs = require('fs');
 const https = require('https');
+const {MongoClient} = require('mongodb');
+
+// REMEMBER TO START THE DATABASE ON YOUR MACHINE
+const uri = 'mongodb://localhost:27017';
+MongoClient.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}, (err, client) => {
+    if (err) {
+        return console.log(err);
+    }
+
+    // Specify database you want to access
+    const db = client.db('rinks');
+
+    console.log(`MongoDB Connected: ${uri}`);
+});
 
 /* used for https */
 const options = {
