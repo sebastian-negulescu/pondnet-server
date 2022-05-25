@@ -1,6 +1,7 @@
 const express = require('express');
 const https = require('https');
 const fs = require('fs');
+const { database, addRink, getRinks } = require('./database.js');
 
 /* server constants */
 const port = 8000;
@@ -34,19 +35,51 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+/*
+ * rink object
+ * {
+ *     coords: {
+ *         lat: float,
+ *         long: float
+ *     },
+ *     rating: int,
+ *     size: string,
+ *     busy: bool
+ * }
+ */
+
 /* server routes */
 
 // handles a request to put a rink in the database
 app.post('/report', (req, res) => {
-    // req.body is what we are looking for
-    res.send(0);
+    const body = req.body;
+    // check that it has coordinates
+    console.log(body);
+    if (!('location' in body && Array.isArray(body['location']['coordinates']))) {
+        res.sendStatus(400); // error
+        return; // does not have valid coordinates
+    }
+
+    body['location']['type'] = 'Point';
+    database(addRink, body)
+        .then(code => res.sendStatus(code))
+        .catch(err => console.error(err));
 });
 
 // handles a request to fetch rinks
 app.post('/find', (req, res) => {
-    let ponds = [];
-    // fetch ponds from database
-    res.send(ponds);
+    const body = req.body;
+    const coordinates = body['location']['coordinates'];
+    if (coordinates === null) {
+        res.send({});
+        return;
+    }
+    database(getRinks, coordinates)
+        .then(rinks => {
+            console.log(rinks);
+            res.send(rinks);
+        })
+        .catch(err => console.log(err));
 });
 
 /* create server */
