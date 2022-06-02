@@ -1,42 +1,76 @@
 const { MongoClient } = require('mongodb');
 const uri = require('./database_uri.js');
 
+let spherified = false;
+let connected = false;
+const client = new MongoClient(uri);
+
 const main = async (func, params) => {
-    const client = new MongoClient(uri);
-    let ret_value;
+    const ret = await connectDatabase() 
+        .then(() => {
+            // specify the database to store points in a circle
+            if (!spherified) {
+                client.db('pondnet_db').collection('rinks').createIndex({location: '2dsphere'}); // only call this once
+                spheriphied = true;
+            }
+        })
+        .then(async () => await func(client, ...params))
+        .catch(error => { // will catch all errors thrown in the promises
+            console.log(error);
+            return {
+                'code': -1,
+                'val': null
+            };
+        });
 
-    try {
-        await client.connect();
-        client.db('pondnet_db').collection('rinks').createIndex({location: '2dsphere'}); // only call this once
+    return ret;
+};
 
-        // call the given function with parameters
-        // params is an array of parameters to pass
-        ret_value = await func(client, params);
-    } finally {
-        await client.close();
+const connectDatabase = async () => {
+    if (connected) {
+        return client;
     }
 
-    return ret_value;
+    await client.connect();
+    connected = true;
+    return client;
 };
 
 const addRink = async (client, rink) => {
-    await client.db('pondnet_db').collection('rinks').insertOne(rink);
-    return 200;
+    // error will be caught in main function
+    await client
+        .db('pondnet_db')
+        .collection('rinks')
+        .insertOne(rink);
+
+    return {
+        'code': 0,
+        'val': null
+    };
 };
 
-const getRinks = async (client, coordinates) => {
-    const rinks = await client.db('pondnet_db').collection('rinks').find(
-    {
-        location:
-            { $near:
-                {
-                    $geometry: { type: 'Point', coordinates: coordinates },
-                    $maxDistance: 50000
+const getRinks = async (client, coordinates, distance) => {
+    // error will be caught in main function
+    const rinks = await client
+        .db('pondnet_db')
+        .collection('rinks')
+        .find({
+            location: {
+                $near: {
+                    $geometry: { 
+                        type: 'Point', 
+                        coordinates: coordinates
+                    },
+                    $maxDistance: distance
                 }
             }
-    }
-    );
-    return rinks.toArray();
+        })
+        .toArray();
+
+    return {
+        'code': 0,
+        'val': rinks
+    };
 };
 
 module.exports = {

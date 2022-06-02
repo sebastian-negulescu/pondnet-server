@@ -61,9 +61,20 @@ app.post('/report', (req, res) => {
     }
 
     body['location']['type'] = 'Point';
-    database(addRink, body)
-        .then(code => res.sendStatus(code))
-        .catch(err => console.error(err));
+    database(addRink, [body])
+        .then(ret_obj => {
+            const code = ret_obj['code'];
+            if (code === 0) {
+                res.sendStatus(200); // success
+                return;
+            }
+
+            res.sendStatus(400); // error
+        })
+        .catch(err => {
+            res.sendStatus(400); // error
+            console.error(err)
+        });
 });
 
 // handles a request to fetch rinks
@@ -71,15 +82,25 @@ app.post('/find', (req, res) => {
     const body = req.body;
     const coordinates = body['location']['coordinates'];
     if (coordinates === null) {
-        res.send({});
+        res.sendStatus(400);
         return;
     }
-    database(getRinks, coordinates)
-        .then(rinks => {
-            console.log(rinks);
-            res.send(rinks);
+
+    database(getRinks, [coordinates, 50000])
+        .then(ret_obj => {
+            const code = ret_obj['code'];
+            if (code === 0) {
+                console.log(ret_obj['val']);
+                res.send(ret_obj['val']);
+                return;
+            }
+
+            res.sendStatus(400);
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            res.sendStatus(400);
+            console.error(err)
+        });
 });
 
 /* create server */
